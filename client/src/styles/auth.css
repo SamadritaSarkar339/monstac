@@ -1,0 +1,3 @@
+.authWrap { min-height: 100vh; display:flex; justify-content:center; align-items:center; padding: 24px; }
+.authCard { width: 380px; background: #0f1a30; border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 18px; color: #e5e7eb; }
+.authCard h1 { margin: 0 0 6px; }

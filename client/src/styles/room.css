@@ -1,0 +1,17 @@
+.roomHeader { margin: 10px 0 14px; }
+.roomGrid { display:grid; grid-template-columns: 1.2fr 0.8fr; gap: 14px; }
+
+.videoCard { background: #0f1a30; border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 14px; color: #e5e7eb; }
+.videoTop { display:flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+
+.videoGrid { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.videoBox { background: #0b1326; border: 1px solid rgba(255,255,255,0.10); border-radius: 12px; padding: 10px; }
+.vid { width: 100%; height: 260px; border-radius: 10px; background: #050a14; object-fit: cover; }
+
+.pre { white-space: pre-wrap; background: #0b1326; padding: 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.10); }
+
+.noteOut { margin-top: 12px; }
+.notesList { display:flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+.noteCard { background: #0b1326; border: 1px solid rgba(255,255,255,0.10); border-radius: 12px; padding: 10px; }
+.noteTitle { display:flex; justify-content: space-between; gap: 10px; }
+.noteText { margin-top: 6px; color: #e5e7eb; }
