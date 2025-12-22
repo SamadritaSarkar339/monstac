@@ -1,7 +1,7 @@
 import axios from "axios";
 
 export const http = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE || "http://localhost:5000"
+  baseURL: "https://monstac-backend.onrender.com" || "http://localhost:5000"
 });
 
 export function setAuthToken(token) {
