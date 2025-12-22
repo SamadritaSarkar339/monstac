@@ -1,6 +1,8 @@
 import React, { useContext } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext.jsx";
+import "../styles/Navbar.css";
+
 
 export default function Navbar() {
   const { user, logout } = useContext(AuthContext);
@@ -8,13 +10,56 @@ export default function Navbar() {
 
   return (
     <div className="nav">
+      {/* LEFT */}
       <div className="navLeft">
-        <Link className="brand" to="/office">MONSTAC</Link>
+        <NavLink className="brand" to="/office">
+          MONSTAC
+        </NavLink>
+
         <span className="pill">Office Metaverse MVP</span>
+
+        <NavLink
+          to="/chats"
+          className={({ isActive }) =>
+            `navBtn ${isActive ? "navActive" : ""}`
+          }
+        >
+          Chats
+        </NavLink>
+
+        <NavLink
+          to="/stories"
+          className={({ isActive }) =>
+            `navBtn ${isActive ? "navActive" : ""}`
+          }
+        >
+          Stories
+        </NavLink>
+
+        <NavLink
+          to="/avatar"
+          className={({ isActive }) =>
+            `navBtn ${isActive ? "navActive" : ""}`
+          }
+        >
+          Avatar
+        </NavLink>
       </div>
+
+      {/* RIGHT */}
       <div className="navRight">
-        <span className="muted">{user?.name}</span>
-        <button className="btn" onClick={() => { logout(); nav("/login"); }}>
+        <div className="userBadge">
+          <span className="statusDot dot-available" />
+          <span className="userName">{user?.name}</span>
+        </div>
+
+        <button
+          className="btnGhost logoutBtn"
+          onClick={() => {
+            logout();
+            nav("/login");
+          }}
+        >
           Logout
         </button>
       </div>

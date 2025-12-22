@@ -6,6 +6,13 @@ import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import Office from "./pages/Office.jsx";
 import Room from "./pages/Room.jsx";
+import Chats from "./pages/Chats.jsx";
+import DMThread from "./pages/DMThread.jsx";
+import AvatarStudio from "./pages/AvatarStudio.jsx";
+import Stories from "./pages/Stories.jsx";
+
+// inside <Routes>
+
 
 function Guard({ children }) {
   const { token } = useContext(AuthContext);
@@ -30,6 +37,10 @@ function AuthGate() {
         <Route path="/" element={token ? <Navigate to="/office" replace /> : <Navigate to="/login" replace />} />
         <Route path="/login" element={token ? <Navigate to="/office" replace /> : <Login />} />
         <Route path="/register" element={token ? <Navigate to="/office" replace /> : <Register />} />
+        <Route path="/chats" element={<Chats />} />
+        <Route path="/dm/:conversationId" element={<DMThread />} />
+        <Route path="/avatar" element={<AvatarStudio />} />
+        <Route path="/stories" element={<Stories />} />
         <Route
           path="/office"
           element={
