@@ -26,44 +26,36 @@ import { setupChat } from "./sockets/chat.socket.js";
 
 dotenv.config();
 
-// ESM-safe __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const app = express(); // ✅ app must be created BEFORE app.use
+const app = express();
 app.use(express.json({ limit: "1mb" }));
-
-// ✅ serve uploads AFTER app exists
 app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
 
-app.use(
-  cors({
-    origin: process.env.CLIENT_ORIGIN || "http://localhost:5173",
-    credentials: true
-  })
-);
+// ✅ ONE correct CORS block
+const ALLOWED_ORIGINS = [
+  process.env.CLIENT_ORIGIN, // must be exact deployed frontend origin
+  "http://localhost:5173"
+].filter(Boolean);
+
+const corsOptions = {
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true);
+    if (ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+    return cb(new Error("Not allowed by CORS: " + origin));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  optionsSuccessStatus: 204
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 app.get("/", (req, res) => res.json({ ok: true, name: "MONSTAC API" }));
-const ALLOWED_ORIGINS = [
-  process.env.CLIENT_ORIGIN || "http://localhost:5173",
-];
 
-app.use(
-  cors({
-    origin: function (origin, cb) {
-      // allow requests with no origin (like Postman)
-      if (!origin) return cb(null, true);
-      if (ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
-      return cb(new Error("Not allowed by CORS: " + origin));
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]
-  })
-);
-
-// ✅ Ensure preflight always succeeds
-app.options("*", cors());
 // routes
 app.use("/api/auth", authRoutes);
 app.use("/api/rooms", roomRoutes);
@@ -80,7 +72,10 @@ app.use("/api/stories", storiesRoutes);
 const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
-  cors: { origin: process.env.CLIENT_ORIGIN || "http://localhost:5173" }
+  cors: {
+    origin: ALLOWED_ORIGINS,
+    credentials: true
+  }
 });
 
 setupPresence(io);
