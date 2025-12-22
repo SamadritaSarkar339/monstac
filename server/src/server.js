@@ -44,7 +44,26 @@ app.use(
 );
 
 app.get("/", (req, res) => res.json({ ok: true, name: "MONSTAC API" }));
+const ALLOWED_ORIGINS = [
+  process.env.CLIENT_ORIGIN || "http://localhost:5173",
+];
 
+app.use(
+  cors({
+    origin: function (origin, cb) {
+      // allow requests with no origin (like Postman)
+      if (!origin) return cb(null, true);
+      if (ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+      return cb(new Error("Not allowed by CORS: " + origin));
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+  })
+);
+
+// ✅ Ensure preflight always succeeds
+app.options("*", cors());
 // routes
 app.use("/api/auth", authRoutes);
 app.use("/api/rooms", roomRoutes);
