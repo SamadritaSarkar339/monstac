@@ -1,25 +1,17 @@
 import express from "express";
-import { auth } from "../middleware/auth.js";
 import User from "../models/User.js";
+import { auth } from "../middleware/auth.js";
 
 const router = express.Router();
 
-// get my profile
-router.get("/me", auth, async (req, res) => {
-  const me = await User.findById(req.user.id).select("-passwordHash");
-  res.json({ user: me });
-});
+// ✅ Get all users (except me)
+router.get("/", auth, async (req, res) => {
+  const meId = req.user.id;
 
-// update my profile (avatar/mood etc.)
-router.patch("/me", auth, async (req, res) => {
-  const { avatar, status } = req.body || {};
+  const users = await User.find({ _id: { $ne: meId } })
+    .select("name email avatar status createdAt");
 
-  const updates = {};
-  if (avatar) updates.avatar = avatar;
-  if (status) updates.status = status;
-
-  const me = await User.findByIdAndUpdate(req.user.id, updates, { new: true }).select("-passwordHash");
-  res.json({ user: me });
+  res.json({ users });
 });
 
 export default router;
