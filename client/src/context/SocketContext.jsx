@@ -10,7 +10,7 @@ export function SocketProvider({ user, children }) {
   useEffect(() => {
     if (!user) return;
 
-    const s = io(import.meta.env.VITE_API_BASE || "http://localhost:5000", {
+    const s = io("https://monstac-backend.onrender.com" || "http://localhost:5000", {
       transports: ["websocket"]
     });
 
