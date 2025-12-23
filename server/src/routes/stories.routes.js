@@ -13,7 +13,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Absolute directories: server/uploads/stories
-const uploadsRoot = path.join(__dirname, "..", "..", "uploads");
+const uploadsRoot = path.join(__dirname, "..", "..","..", "uploads");
 const storiesDir = path.join(uploadsRoot, "stories");
 fs.mkdirSync(storiesDir, { recursive: true });
 
