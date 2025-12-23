@@ -12,11 +12,9 @@ const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ✅ Absolute directories
-const uploadsRoot = path.join(__dirname, "..", "..", "uploads"); // server/uploads
-const storiesDir = path.join(uploadsRoot, "stories");            // server/uploads/stories
-
-// ✅ Create folder(s) if missing (Render fix)
+// Absolute directories: server/uploads/stories
+const uploadsRoot = path.join(__dirname, "..", "..", "uploads");
+const storiesDir = path.join(uploadsRoot, "stories");
 fs.mkdirSync(storiesDir, { recursive: true });
 
 const storage = multer.diskStorage({
@@ -32,8 +30,29 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB
 });
 
-// ✅ POST image story
-// Frontend must send FormData field name: "image"
+// ✅ POST text story
+router.post("/text", auth, async (req, res) => {
+  try {
+    const { text, mood } = req.body || {};
+    if (!text || !String(text).trim()) {
+      return res.status(400).json({ message: "Text is required" });
+    }
+
+    const story = await Story.create({
+      user: req.user.id,
+      kind: "text",
+      text: String(text).trim(),
+      mood: mood || "neutral",
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+    });
+
+    res.json({ story });
+  } catch (e) {
+    res.status(500).json({ message: e.message || "Failed to post text story" });
+  }
+});
+
+// ✅ POST image story (FormData field name must be "image")
 router.post("/image", auth, upload.single("image"), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: "No image uploaded" });
@@ -50,7 +69,7 @@ router.post("/image", auth, upload.single("image"), async (req, res) => {
 
     res.json({ story });
   } catch (e) {
-    res.status(500).json({ message: e.message || "Upload failed" });
+    res.status(500).json({ message: e.message || "Failed to post image story" });
   }
 });
 
