@@ -1,75 +1,71 @@
 import express from "express";
-import { auth } from "../middleware/auth.js";
-import Story from "../models/Story.js";
-import User from "../models/User.js";
 import multer from "multer";
 import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
 import { nanoid } from "nanoid";
+
+import { auth } from "../middleware/auth.js";
+import Story from "../models/Story.js";
 
 const router = express.Router();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// ✅ uploads directory (works on local + render ephemeral disk)
+const uploadDir = path.join(__dirname, "..", "..", "uploads", "stories");
+fs.mkdirSync(uploadDir, { recursive: true });
+
+// ✅ Multer storage
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, "uploads"),
+  destination: (req, file, cb) => cb(null, uploadDir),
   filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname || "");
-    cb(null, `story_${Date.now()}_${nanoid(6)}${ext}`);
+    const ext = path.extname(file.originalname || "").toLowerCase() || ".jpg";
+    cb(null, `${Date.now()}-${nanoid(6)}${ext}`);
   }
 });
-const upload = multer({ storage });
 
-// create text story
-router.post("/text", auth, async (req, res) => {
-  const { text } = req.body || {};
-  if (!text?.trim()) return res.status(400).json({ message: "Text required" });
-
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-
-  const s = await Story.create({
-    user: req.user.id,
-    type: "text",
-    text: text.trim(),
-    expiresAt
-  });
-
-  res.json({ story: s });
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    const ok = ["image/jpeg", "image/png", "image/webp", "image/jpg"].includes(file.mimetype);
+    if (!ok) return cb(new Error("Only JPG/PNG/WEBP allowed"));
+    cb(null, true);
+  }
 });
 
-// create image story
-router.post("/image", auth, upload.single("file"), async (req, res) => {
-  if (!req.file) return res.status(400).json({ message: "File required" });
+// ✅ POST image story
+// IMPORTANT: frontend must send FormData key = "image"
+router.post("/image", auth, upload.single("image"), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: "No image file uploaded" });
 
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-  const url = `/uploads/${req.file.filename}`;
+    const mediaUrl = `/uploads/stories/${req.file.filename}`;
 
-  const s = await Story.create({
-    user: req.user.id,
-    type: "image",
-    mediaUrl: url,
-    expiresAt
-  });
+    const story = await Story.create({
+      user: req.user.id,
+      kind: "image",
+      mediaUrl,
+      caption: req.body.caption || "",
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+    });
 
-  res.json({ story: s });
+    res.json({ story });
+  } catch (e) {
+    res.status(500).json({ message: e.message || "Upload failed" });
+  }
 });
 
-// list active stories for me + my connections
-router.get("/feed", auth, async (req, res) => {
-  const me = await User.findById(req.user.id).select("connections");
-  const ids = [req.user.id, ...(me?.connections || []).map((x) => x.toString())];
-
+// ✅ list active stories
+router.get("/", auth, async (req, res) => {
   const now = new Date();
-  const stories = await Story.find({ user: { $in: ids }, expiresAt: { $gt: now } })
-    .populate("user", "name avatar status")
+  const stories = await Story.find({ expiresAt: { $gt: now } })
+    .populate("user", "name avatar")
     .sort({ createdAt: -1 });
 
-  // group by user
-  const grouped = {};
-  for (const st of stories) {
-    const uid = st.user._id.toString();
-    if (!grouped[uid]) grouped[uid] = { user: st.user, stories: [] };
-    grouped[uid].stories.push(st);
-  }
-
-  res.json({ groups: Object.values(grouped) });
+  res.json({ stories });
 });
 
 export default router;
