@@ -1,9 +1,8 @@
 import express from "express";
 import multer from "multer";
-import path from "path";
 import fs from "fs";
+import path from "path";
 import { fileURLToPath } from "url";
-import { nanoid } from "nanoid";
 
 import { auth } from "../middleware/auth.js";
 import Story from "../models/Story.js";
@@ -13,34 +12,31 @@ const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ✅ uploads directory (works on local + render ephemeral disk)
-const uploadDir = path.join(__dirname, "..", "..", "uploads", "stories");
-fs.mkdirSync(uploadDir, { recursive: true });
+// ✅ Absolute directories
+const uploadsRoot = path.join(__dirname, "..", "..", "uploads"); // server/uploads
+const storiesDir = path.join(uploadsRoot, "stories");            // server/uploads/stories
 
-// ✅ Multer storage
+// ✅ Create folder(s) if missing (Render fix)
+fs.mkdirSync(storiesDir, { recursive: true });
+
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
+  destination: (req, file, cb) => cb(null, storiesDir),
   filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname || "").toLowerCase() || ".jpg";
-    cb(null, `${Date.now()}-${nanoid(6)}${ext}`);
+    const ext = path.extname(file.originalname || "").toLowerCase() || ".png";
+    cb(null, `story_${Date.now()}_${Math.random().toString(36).slice(2, 8)}${ext}`);
   }
 });
 
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
-  fileFilter: (req, file, cb) => {
-    const ok = ["image/jpeg", "image/png", "image/webp", "image/jpg"].includes(file.mimetype);
-    if (!ok) return cb(new Error("Only JPG/PNG/WEBP allowed"));
-    cb(null, true);
-  }
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB
 });
 
 // ✅ POST image story
-// IMPORTANT: frontend must send FormData key = "image"
+// Frontend must send FormData field name: "image"
 router.post("/image", auth, upload.single("image"), async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ message: "No image file uploaded" });
+    if (!req.file) return res.status(400).json({ message: "No image uploaded" });
 
     const mediaUrl = `/uploads/stories/${req.file.filename}`;
 
@@ -58,7 +54,7 @@ router.post("/image", auth, upload.single("image"), async (req, res) => {
   }
 });
 
-// ✅ list active stories
+// ✅ GET active stories
 router.get("/", auth, async (req, res) => {
   const now = new Date();
   const stories = await Story.find({ expiresAt: { $gt: now } })
